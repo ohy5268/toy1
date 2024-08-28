@@ -60,7 +60,7 @@ class NaverThemeScraper(ThemeScraper):
                 change_rate = cols[2].get_text(strip=True)
                 data.append([theme_name, up_down, change_rate, idx])
 
-        return pd.DataFrame(data, columns=["Theme", "Up/Down", "Change Rate", "idx"])
+        return pd.DataFrame(data, columns=["Theme_name", "Up/Down", "Change Rate", "idx"])
 
 # 사용 예시
 st = time.time()

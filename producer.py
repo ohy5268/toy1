@@ -7,8 +7,18 @@ from abc import ABC, abstractmethod
 import time
 import os
 from datetime import datetime
+from kafka import KafkaProducer
+import json
 
 logging.basicConfig(level=logging.INFO)
+
+# Kafka Producer 초기화
+producer = KafkaProducer(bootstrap_servers='kafka:9092',
+                         value_serializer=lambda v: json.dumps(v).encode('utf-8'))
+
+def send_to_kafka(topic, data):
+    producer.send(topic, value=data)
+    producer.flush()
 
 class ThemeScraper(ABC):
     def __init__(self, base_url, start_page, end_page):
@@ -64,7 +74,12 @@ class NaverThemeScraper(ThemeScraper):
                 change_rate = cols[2].get_text(strip=True)
                 data.append([theme_name, up_down, change_rate, idx, current_time])
 
-        return pd.DataFrame(data, columns=["Theme_name", "Up/Down", "Change Rate", "idx", "수집시간"])
+        # 데이터프레임 생성 후 Kafka에 전송
+        df = pd.DataFrame(data, columns=["Theme_name", "Up/Down", "Change Rate", "idx", "수집시간"])
+        for record in df.to_dict(orient="records"):
+            send_to_kafka('naver_stock_topic', record)
+
+        return df
 
 
 class NaverThemeDetailScraper(ThemeScraper):
@@ -120,10 +135,15 @@ class NaverThemeDetailScraper(ThemeScraper):
                     prev_volume, current_time
                 ])
 
-        return pd.DataFrame(data, columns=[
+        # 데이터프레임 생성 후 Kafka에 전송
+        df = pd.DataFrame(data, columns=[
             "종목명", "시장구분", "편입사유", "현재가", "전일비", "등락률",
             "매수호가", "매도호가", "거래량", "거래대금", "전일거래량", "수집시간"
         ])
+        for record in df.to_dict(orient="records"):
+            send_to_kafka('naver_stock_topic', record)
+
+        return df
 
 
 def save_to_excel(df, directory, filename):
@@ -150,7 +170,7 @@ def main():
     print("테마 정보 수집 완료:")
     print(theme_df.head())
 
-    save_to_excel(theme_df, base_dir, "테마정보수집.xlsx")
+    # save_to_excel(theme_df, base_dir, "테마정보수집.xlsx")
 
     all_stock_data = pd.DataFrame()
 
@@ -164,7 +184,7 @@ def main():
     print("세부 종목 정보 수집 완료:")
     print(all_stock_data.head())
 
-    save_to_excel(all_stock_data, base_dir, "테마세부종목정보수집.xlsx")
+    # save_to_excel(all_stock_data, base_dir, "테마세부종목정보수집.xlsx")
 
 
 if __name__ == "__main__":

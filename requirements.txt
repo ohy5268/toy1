@@ -1,0 +1,6 @@
+requests==2.25.1
+beautifulsoup4==4.9.3
+pandas==1.2.4
+numpy==1.23.2
+kafka-python==2.0.2
+openpyxl==3.0.7
