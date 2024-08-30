@@ -75,7 +75,7 @@ class NaverThemeScraper(ThemeScraper):
                 data.append([theme_name, up_down, change_rate, idx, current_time])
 
         # 데이터프레임 생성 후 Kafka에 전송
-        df = pd.DataFrame(data, columns=["Theme_name", "Up/Down", "Change Rate", "idx", "수집시간"])
+        df = pd.DataFrame(data, columns=["ThemeName", "UpDown", "ChangeRate", "idx", "collectTime"])
         for record in df.to_dict(orient="records"):
             # send_to_kafka('naver_stock_topic', record)
             send_to_kafka('naver_theme', record)
@@ -133,13 +133,13 @@ class NaverThemeDetailScraper(ThemeScraper):
                     stock_name, market, inclusion_reason, current_price,
                     prev_day_diff, change_rate, buy_price,
                     sell_price, volume, trading_value,
-                    prev_volume, current_time
+                    prev_volume, current_time, self.idx
                 ])
 
         # 데이터프레임 생성 후 Kafka에 전송
         df = pd.DataFrame(data, columns=[
-            "종목명", "시장구분", "편입사유", "현재가", "전일비", "등락률",
-            "매수호가", "매도호가", "거래량", "거래대금", "전일거래량", "수집시간"
+            "stockName", "marketType", "reason", "currentPrice", "prevDayDiff", "changeRate",
+            "buyPrice", "sellPrice", "volume", "tradingValue", "prevVolume", "currentTime", "idx"
         ])
         for record in df.to_dict(orient="records"):
             # send_to_kafka('naver_stock_topic', record)
@@ -170,7 +170,7 @@ def main():
     theme_scraper = NaverThemeScraper(base_url="https://finance.naver.com/sise/theme.naver?&type=theme", start_page=1, end_page=8)
     theme_df = theme_scraper.scrape()
     print("테마 정보 수집 완료:")
-    print(theme_df.head())
+    # print(theme_df.head())
 
     # save_to_excel(theme_df, base_dir, "테마정보수집.xlsx")
 
@@ -184,7 +184,7 @@ def main():
         all_stock_data = pd.concat([all_stock_data, stock_df], ignore_index=True)
 
     print("세부 종목 정보 수집 완료:")
-    print(all_stock_data.head())
+    # print(all_stock_data.head())
 
     # save_to_excel(all_stock_data, base_dir, "테마세부종목정보수집.xlsx")
 

@@ -1,0 +1,4 @@
+# 빌드 과정에서 제외할 불필요한 폴더
+Archive/
+Data_Archive/
+Data_Records/

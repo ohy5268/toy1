@@ -12,4 +12,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # 스크립트를 실행하도록 설정
-CMD ["python", "producer.py"]
+# CMD ["python", "producer.py"]

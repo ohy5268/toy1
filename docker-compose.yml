@@ -1,10 +1,39 @@
 # version: '3.8'
 
 services:
+  theme_consumer:
+    build: .
+    command: python theme_consumer.py
+    depends_on:
+      - kafka
+      - mysql
+    networks:
+      - app-network
+
+  stock_consumer:
+    build: .
+    command: python stock_consumer.py
+    depends_on:
+      - kafka
+      - mysql
+    networks:
+      - app-network
+
+  producer:
+    build: .
+    command: python producer.py
+    depends_on:
+      - theme_consumer
+      - stock_consumer
+    networks:
+      - app-network
+      
   zookeeper:
     image: zookeeper:latest
     ports:
       - "2181:2181"
+    networks:
+      - app-network
 
   kafka:
     image: wurstmeister/kafka:2.13-2.7.0
@@ -13,48 +42,41 @@ services:
     environment:
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
-      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://112.161.8.195:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092 # Docker 내부 접근할때
+      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://112.161.8.195:9092 # Local에서 접근할때
+      # KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,PLAINTEXT_HOST://112.161.8.195:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     depends_on:
       - zookeeper
+    networks:
+      - app-network
 
-  # kafka:
-  #   image: wurstmeister/kafka:2.13-2.7.0
-  #   ports:
-  #     - "9092:9092"
-  #     - "9093:9093"
-  #   environment:
-  #     KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-  #     KAFKA_LISTENERS: PLAINTEXT_INTERNAL://0.0.0.0:9092,PLAINTEXT_EXTERNAL://0.0.0.0:9093
-  #     KAFKA_ADVERTISED_LISTENERS: PLAINTEXT_INTERNAL://kafka:9092,PLAINTEXT_EXTERNAL://112.161.8.195:9093
-  #     KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT_INTERNAL:PLAINTEXT,PLAINTEXT_EXTERNAL:PLAINTEXT
-  #     KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT_INTERNAL
-  #     KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-  #   depends_on:
-  #     - zookeeper
-
-  # mysql:
-  #   image: mysql:5.7
-  #   environment:
-  #     MYSQL_ROOT_PASSWORD: root_password
-  #     MYSQL_DATABASE: naver_stock
-  #     MYSQL_USER: user
-  #     MYSQL_PASSWORD: password
-  #   ports:
-  #     - "3306:3306"
-  #   volumes:
-  #     - db_data:/var/lib/mysql
-
-  app:
-    build: .
-    volumes:
-      - .:/app
-    depends_on:
-      - kafka
-      # - mysql
+  mysql:
+    image: mysql:5.7
     environment:
-      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: naver_stock
 
-volumes:
-  db_data:
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./Data_Archive:/var/lib/mysql
+    networks:
+      - app-network
+
+#   app:
+#     build: .
+#     volumes:
+#       - .:/app
+#     depends_on:
+#       - kafka
+#       - mysql
+#     environment:
+#       KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+
+# volumes:
+#   db_data:
+
+networks:
+  app-network:
+    driver: bridge

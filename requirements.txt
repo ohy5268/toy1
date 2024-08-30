@@ -4,3 +4,6 @@ pandas==1.2.4
 numpy==1.23.2
 kafka-python==2.0.2
 openpyxl==3.0.7
+mysql-connector-python==8.0.23
+networkx==3.1
+matplotlib==3.5.3
