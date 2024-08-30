@@ -12,14 +12,6 @@ import json
 
 logging.basicConfig(level=logging.INFO)
 
-# Kafka Producer 초기화 #toy1-kafka-1:9092
-producer = KafkaProducer(bootstrap_servers='kafka:9092',
-                         value_serializer=lambda v: json.dumps(v).encode('utf-8'))
-
-def send_to_kafka(topic, data):
-    producer.send(topic, value=data)
-    producer.flush()
-
 class ThemeScraper(ABC):
     def __init__(self, base_url, start_page, end_page):
         self.base_url = base_url
@@ -78,8 +70,11 @@ class NaverThemeScraper(ThemeScraper):
         df = pd.DataFrame(data, columns=["Theme_name", "Up/Down", "Change Rate", "idx", "수집시간"])
         for record in df.to_dict(orient="records"):
             # send_to_kafka('naver_stock_topic', record)
-            send_to_kafka('naver_theme', record)
-
+            x = lambda v : json.dumps(record).encode('utf-8')
+            # print(x)
+            y = json.loads(x.decode('utf-8'))
+            print(y)
+            
         return df
 
 
@@ -143,7 +138,7 @@ class NaverThemeDetailScraper(ThemeScraper):
         ])
         for record in df.to_dict(orient="records"):
             # send_to_kafka('naver_stock_topic', record)
-            send_to_kafka('naver_stock', record)
+            print(record)
 
         return df
 
@@ -164,27 +159,27 @@ def main():
     today_str = datetime.today().strftime('%Y%m%d')
 
     # 저장 디렉토리 설정 (현재 실행 중인 파이썬 파일의 디렉토리 내)
-    base_dir = os.path.join(current_dir, "Data_Records", today_str)
+    base_dir = os.path.join(current_dir, "테마정보수집", today_str)
 
     # 1. 테마 정보 수집 및 저장
     theme_scraper = NaverThemeScraper(base_url="https://finance.naver.com/sise/theme.naver?&type=theme", start_page=1, end_page=8)
     theme_df = theme_scraper.scrape()
     print("테마 정보 수집 완료:")
-    print(theme_df.head())
+    # print(theme_df.head())
 
     # save_to_excel(theme_df, base_dir, "테마정보수집.xlsx")
 
     all_stock_data = pd.DataFrame()
 
     # 2. 각 테마의 idx를 사용하여 세부 종목 정보 수집 및 저장
-    for idx in theme_df['idx']:
-        detail_scraper = NaverThemeDetailScraper(base_url=f"https://finance.naver.com/sise/sise_group_detail.naver?type=theme&no={idx}", idx=idx)
-        stock_df = detail_scraper.scrape()
-        stock_df['테마 idx'] = idx  # 테마 idx 정보를 추가
-        all_stock_data = pd.concat([all_stock_data, stock_df], ignore_index=True)
+    # for idx in theme_df['idx']:
+    #     detail_scraper = NaverThemeDetailScraper(base_url=f"https://finance.naver.com/sise/sise_group_detail.naver?type=theme&no={idx}", idx=idx)
+    #     stock_df = detail_scraper.scrape()
+    #     stock_df['테마 idx'] = idx  # 테마 idx 정보를 추가
+    #     all_stock_data = pd.concat([all_stock_data, stock_df], ignore_index=True)
 
-    print("세부 종목 정보 수집 완료:")
-    print(all_stock_data.head())
+    # print("세부 종목 정보 수집 완료:")
+    # print(all_stock_data.head())
 
     # save_to_excel(all_stock_data, base_dir, "테마세부종목정보수집.xlsx")
 
@@ -194,3 +189,4 @@ if __name__ == "__main__":
     main()
     end_time = time.time()
     print(f"Elapsed Time : {end_time - start_time:.2f} seconds")
+
